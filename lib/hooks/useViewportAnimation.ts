@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { Extrapolation, interpolate, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { ANIMATION_DURATION, ANIMATION_EASING, OPACITY, SCALE } from '../constants/animations';
 import { useVisibility } from '../context/VisibilityContext';
 
 interface UseViewportAnimationProps {
@@ -7,13 +8,19 @@ interface UseViewportAnimationProps {
   initialOpacity?: number;
   targetOpacity?: number;
   duration?: number;
+  includeScale?: boolean;
+  initialScale?: number;
+  targetScale?: number;
 }
 
 export const useViewportAnimation = ({
   index,
-  initialOpacity = 0.3,
-  targetOpacity = 1,
-  duration = 300
+  initialOpacity = OPACITY.FADED,
+  targetOpacity = OPACITY.VISIBLE,
+  duration = ANIMATION_DURATION.NORMAL,
+  includeScale = true,
+  initialScale = SCALE.SLIGHTLY_SMALL,
+  targetScale = SCALE.NORMAL
 }: UseViewportAnimationProps) => {
   const { visibleItems } = useVisibility();
   const opacity = useSharedValue(initialOpacity);
@@ -25,15 +32,30 @@ export const useViewportAnimation = ({
       isVisible ? targetOpacity : initialOpacity,
       {
         duration,
-        easing: Easing.out(Easing.cubic),
+        easing: ANIMATION_EASING.EASE_OUT,
       }
     );
   }, [visibleItems, index, opacity, initialOpacity, targetOpacity, duration]);
 
   const animatedStyle = useAnimatedStyle(() => {
-    return {
+    const baseStyle: any = {
       opacity: opacity.value,
     };
+
+    if (includeScale) {
+      baseStyle.transform = [
+        {
+          scale: interpolate(
+            opacity.value,
+            [initialOpacity, targetOpacity],
+            [initialScale, targetScale],
+            Extrapolation.CLAMP
+          )
+        }
+      ];
+    }
+
+    return baseStyle;
   });
 
   return {

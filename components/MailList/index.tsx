@@ -1,12 +1,12 @@
+import { useVisibility } from '@/lib/context/VisibilityContext'
 import { FlashList, ViewToken } from "@shopify/flash-list"
 import React, { useCallback, useRef, useState } from 'react'
 import { RefreshControl } from 'react-native'
 import SwipeableMailItem from "./SwipeableMailItem"
 
-
-export default function MailList() { 
-    const [viewableItems, setViewableItems] = useState(new Set())
+export default function MailList({data}: {data: any[]}) { 
     const [refreshing, setRefreshing] = useState(false)
+    const { setVisibleItems } = useVisibility()
     
     const viewabilityConfig = useRef({
         itemVisiblePercentThreshold: 50, // Item'in %50'si görünür olduğunda tetiklenir
@@ -15,9 +15,9 @@ export default function MailList() {
     })
 
     const onViewableItemsChanged = useCallback(({ viewableItems: items }: { viewableItems: ViewToken[] }) => {
-        const newViewableItems = new Set(items.map(item => item.index))
-        setViewableItems(newViewableItems)
-    }, [])
+        const newViewableItems = new Set(items.map(item => item.index).filter((index): index is number => index !== null))
+        setVisibleItems(newViewableItems)
+    }, [setVisibleItems])
 
     const handleArchive = useCallback((item: any) => {
         console.log('Archiving item:', item)
@@ -41,20 +41,19 @@ export default function MailList() {
     }, [])
 
     const renderItem = useCallback(({ item, index }: { item: any, index: number }) => {
-        const isVisible = viewableItems.has(index)
         return (
             <SwipeableMailItem 
                 item={item} 
-                isVisible={isVisible}
+                index={index}
                 onArchive={handleArchive}
                 onDelete={handleDelete}
             />
         )
-    }, [viewableItems, handleArchive, handleDelete])
+    }, [handleArchive, handleDelete])
 
     return ( 
         <FlashList 
-            data={Array.from({ length: 50 }).fill(dummyData)} 
+            data={data} 
             renderItem={renderItem}
             keyExtractor={(item, index) => index.toString()} 
             contentContainerStyle={{ 
@@ -75,15 +74,3 @@ export default function MailList() {
         /> 
     ) 
 } 
-
-
-
-const dummyData = { 
-    id: 1, 
-    image: 'https://github.com/grkndev.png', 
-    author: 'Grkndev', 
-    subject: 'Hello, world!', 
-    body: 'This is a test email', 
-    sentAt: new Date(), 
-    isRead: false, 
-}

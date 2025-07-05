@@ -1,8 +1,10 @@
+import { OPACITY, SCALE, SPRING_CONFIG } from '@/lib/constants/animations'
 import * as Haptics from 'expo-haptics'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { View } from 'react-native'
 import { PanGestureHandler, PanGestureHandlerGestureEvent } from 'react-native-gesture-handler'
 import Animated, {
+    cancelAnimation,
     Extrapolation,
     interpolate,
     runOnJS,
@@ -16,7 +18,7 @@ import MailListItem from './MailListItem'
 
 interface SwipeableMailItemProps {
     item: any
-    isVisible: boolean
+    index: number
     onArchive?: (item: any) => void
     onDelete?: (item: any) => void
 }
@@ -26,7 +28,7 @@ const SWIPE_THRESHOLD_COMPLETE = 150
 
 const SwipeableMailItem = React.memo(function SwipeableMailItem({ 
     item, 
-    isVisible, 
+    index, 
     onArchive, 
     onDelete 
 }: SwipeableMailItemProps) {
@@ -35,6 +37,13 @@ const SwipeableMailItem = React.memo(function SwipeableMailItem({
     const hasTriggeredPartialRight = useSharedValue(false)
     const hasTriggeredCompleteLeft = useSharedValue(false)
     const hasTriggeredCompleteRight = useSharedValue(false)
+
+    // Cleanup animations on unmount
+    useEffect(() => {
+        return () => {
+            cancelAnimation(translateX)
+        }
+    }, [translateX])
 
     const triggerHaptic = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
@@ -91,10 +100,7 @@ const SwipeableMailItem = React.memo(function SwipeableMailItem({
                 }
             }
 
-            translateX.value = withSpring(0, {
-                damping: 15,
-                stiffness: 150,
-            })
+            translateX.value = withSpring(0, SPRING_CONFIG.GENTLE)
         },
         onCancel: () => {
             // Reset all haptic flags
@@ -104,10 +110,7 @@ const SwipeableMailItem = React.memo(function SwipeableMailItem({
             hasTriggeredCompleteRight.value = false
             
             // Reset position with spring animation
-            translateX.value = withSpring(0, {
-                damping: 15,
-                stiffness: 150,
-            })
+            translateX.value = withSpring(0, SPRING_CONFIG.GENTLE)
         }
     })
 
@@ -121,14 +124,14 @@ const SwipeableMailItem = React.memo(function SwipeableMailItem({
         const progress = interpolate(
             translateX.value,
             [-SWIPE_THRESHOLD_COMPLETE, -SWIPE_THRESHOLD_PARTIAL, 0],
-            [1, 0.6, 0],
+            [OPACITY.VISIBLE, OPACITY.SEMI_VISIBLE, OPACITY.HIDDEN],
             Extrapolation.CLAMP
         )
 
         const scale = interpolate(
             translateX.value,
             [-SWIPE_THRESHOLD_COMPLETE, -SWIPE_THRESHOLD_PARTIAL, 0],
-            [1.2, 1, 0.8],
+            [SCALE.LARGE, SCALE.NORMAL, SCALE.SMALL],
             Extrapolation.CLAMP
         )
 
@@ -142,14 +145,14 @@ const SwipeableMailItem = React.memo(function SwipeableMailItem({
         const progress = interpolate(
             translateX.value,
             [0, SWIPE_THRESHOLD_PARTIAL, SWIPE_THRESHOLD_COMPLETE],
-            [0, 0.6, 1],
+            [OPACITY.HIDDEN, OPACITY.SEMI_VISIBLE, OPACITY.VISIBLE],
             Extrapolation.CLAMP
         )
 
         const scale = interpolate(
             translateX.value,
             [0, SWIPE_THRESHOLD_PARTIAL, SWIPE_THRESHOLD_COMPLETE],
-            [0.8, 1, 1.2],
+            [SCALE.SMALL, SCALE.NORMAL, SCALE.LARGE],
             Extrapolation.CLAMP
         )
 
@@ -162,8 +165,8 @@ const SwipeableMailItem = React.memo(function SwipeableMailItem({
     const leftBackgroundAnimatedStyle = useAnimatedStyle(() => {
         const progress = interpolate(
             translateX.value,
-            [-SWIPE_THRESHOLD_COMPLETE, 0],
-            [1, 0],
+            [-SWIPE_THRESHOLD_COMPLETE, -SWIPE_THRESHOLD_PARTIAL, 0],
+            [OPACITY.VISIBLE, OPACITY.FADED, OPACITY.HIDDEN],
             Extrapolation.CLAMP
         )
 
@@ -175,8 +178,8 @@ const SwipeableMailItem = React.memo(function SwipeableMailItem({
     const rightBackgroundAnimatedStyle = useAnimatedStyle(() => {
         const progress = interpolate(
             translateX.value,
-            [0, SWIPE_THRESHOLD_COMPLETE],
-            [0, 1],
+            [0, SWIPE_THRESHOLD_PARTIAL, SWIPE_THRESHOLD_COMPLETE],
+            [OPACITY.HIDDEN, OPACITY.FADED, OPACITY.VISIBLE],
             Extrapolation.CLAMP
         )
 
@@ -215,7 +218,7 @@ const SwipeableMailItem = React.memo(function SwipeableMailItem({
                 shouldCancelWhenOutside={true}
             >
                 <Animated.View style={[containerAnimatedStyle]} className="bg-white">
-                    <MailListItem item={item} isVisible={isVisible} />
+                    <MailListItem item={item} index={index} />
                 </Animated.View>
             </PanGestureHandler>
         </View>

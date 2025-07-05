@@ -1,37 +1,22 @@
+import { useViewportAnimation } from '@/lib/hooks/useViewportAnimation'
 import React from 'react'
 import { Image, Text, TouchableOpacity, View } from 'react-native'
-import Animated, {
-    Extrapolation,
-    interpolate,
-    useAnimatedStyle,
-    useSharedValue,
-    withTiming
-} from 'react-native-reanimated'
+import Animated from 'react-native-reanimated'
 import Icons from '../ui/icons'
+
 // Reanimated ile animasyonlu wrapper component
-const MailListItem = React.memo(function MailListItem({ item, isVisible }: { item: any, isVisible: boolean }) {
-    const opacity = useSharedValue(1)
-
-    React.useEffect(() => {
-        opacity.value = withTiming(isVisible ? 1 : 0.3, {
-            duration: 150,
-        })
-    }, [isVisible, opacity])
-
-    const animatedStyle = useAnimatedStyle(() => {
-        return {
-            opacity: opacity.value,
-            transform: [
-                {
-                    scale: interpolate(
-                        opacity.value,
-                        [0.3, 1],
-                        [0.95, 1],
-                        Extrapolation.CLAMP
-                    )
-                }
-            ]
-        }
+const MailListItem = React.memo(function MailListItem({ 
+    item, 
+    index 
+}: { 
+    item: any, 
+    index: number 
+}) {
+    const { animatedStyle } = useViewportAnimation({
+        index,
+        initialOpacity: 0.3,
+        targetOpacity: 1,
+        duration: 150
     })
 
     return (
