@@ -9,12 +9,12 @@ import Animated, {
 } from 'react-native-reanimated'
 import Icons from '../ui/icons'
 // Reanimated ile animasyonlu wrapper component
-export default function MailListItem({ item, isVisible }: { item: any, isVisible: boolean }) {
-    const opacity = useSharedValue(0.3)
+const MailListItem = React.memo(function MailListItem({ item, isVisible }: { item: any, isVisible: boolean }) {
+    const opacity = useSharedValue(1)
 
     React.useEffect(() => {
         opacity.value = withTiming(isVisible ? 1 : 0.3, {
-            duration: 300,
+            duration: 150,
         })
     }, [isVisible, opacity])
 
@@ -38,7 +38,7 @@ export default function MailListItem({ item, isVisible }: { item: any, isVisible
         <Animated.View style={animatedStyle}>
             <TouchableOpacity
                 activeOpacity={0.8}
-                className='flex flex-row items-start  gap-2 w-full px-4 py-2'
+                className='flex flex-row items-start  gap-2 w-full px-4 py-2 mt-2'
                 onPress={() => {
                     console.log('pressed')
                 }}
@@ -66,4 +66,6 @@ export default function MailListItem({ item, isVisible }: { item: any, isVisible
             </TouchableOpacity>
         </Animated.View>
     )
-}
+})
+
+export default MailListItem

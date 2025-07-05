@@ -1,14 +1,17 @@
 import { FlashList, ViewToken } from "@shopify/flash-list"
 import React, { useCallback, useRef, useState } from 'react'
-import MailListItem from "./MailListItem"
+import { RefreshControl } from 'react-native'
+import SwipeableMailItem from "./SwipeableMailItem"
 
 
 export default function MailList() { 
     const [viewableItems, setViewableItems] = useState(new Set())
+    const [refreshing, setRefreshing] = useState(false)
+    
     const viewabilityConfig = useRef({
-        itemVisiblePercentThreshold: 30, // Item'in %30'u görünür olduğunda tetiklenir
+        itemVisiblePercentThreshold: 50, // Item'in %50'si görünür olduğunda tetiklenir
         waitForInteraction: false,
-        minimumViewTime: 100
+        minimumViewTime: 50
     })
 
     const onViewableItemsChanged = useCallback(({ viewableItems: items }: { viewableItems: ViewToken[] }) => {
@@ -16,15 +19,38 @@ export default function MailList() {
         setViewableItems(newViewableItems)
     }, [])
 
-    const renderItem = ({ item, index }: { item: any, index: number }) => {
+    const handleArchive = useCallback((item: any) => {
+        console.log('Archiving item:', item)
+        // TODO: Implement archive logic
+    }, [])
+
+    const handleDelete = useCallback((item: any) => {
+        console.log('Deleting item:', item)
+        // TODO: Implement delete logic
+    }, [])
+
+    const onRefresh = useCallback(() => {
+        setRefreshing(true)
+        
+        // Simulate loading delay (1-2 seconds)
+        setTimeout(() => {
+            setRefreshing(false)
+            console.log('Mail list refreshed!')
+            // TODO: Implement actual refresh logic (fetch new emails, etc.)
+        }, 1500)
+    }, [])
+
+    const renderItem = useCallback(({ item, index }: { item: any, index: number }) => {
         const isVisible = viewableItems.has(index)
         return (
-            <MailListItem 
+            <SwipeableMailItem 
                 item={item} 
                 isVisible={isVisible}
+                onArchive={handleArchive}
+                onDelete={handleDelete}
             />
         )
-    }
+    }, [viewableItems, handleArchive, handleDelete])
 
     return ( 
         <FlashList 
@@ -32,11 +58,20 @@ export default function MailList() {
             renderItem={renderItem}
             keyExtractor={(item, index) => index.toString()} 
             contentContainerStyle={{ 
-                padding: 8 
+                // padding: 8 
             }} 
-            estimatedItemSize={100}
+            estimatedItemSize={120}
+            removeClippedSubviews={true}
             onViewableItemsChanged={onViewableItemsChanged}
             viewabilityConfig={viewabilityConfig.current}
+            refreshControl={
+                <RefreshControl 
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
+                    tintColor="#007AFF"
+                    colors={['#007AFF']}
+                />
+            }
         /> 
     ) 
 } 
