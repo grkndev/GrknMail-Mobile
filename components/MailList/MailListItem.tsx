@@ -1,3 +1,4 @@
+import { truncate } from '@/lib/utils'
 import React from 'react'
 import { Image, Text, View } from 'react-native'
 import Icons from '../ui/icons'
@@ -28,7 +29,7 @@ const MailListItem = React.memo(function MailListItem({
                     <View className='flex flex-row justify-between items-center flex-1 gap-2'>
                         <View className='flex-1'>
                             <Text className='text-base font-semibold'>Hello, world!</Text>
-                            <Text className='text-sm text-zinc-400 '>{"This is a test email ".repeat(10).truncate(100)}</Text>
+                            <Text className='text-sm text-zinc-400 '>{truncate("This is a test email ".repeat(10), 100)}</Text>
                         </View>
                         <View className='flex flex-col items-center justify-evenly h-full'>
                             <Icons name='Paperclip' size={16} color='gray' />

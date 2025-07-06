@@ -1,11 +1,12 @@
+export const truncate = (str: string, max: number) => str.length > max ? str.slice(0, max - 1) + "…" : str;
 
-if (!String.prototype.truncate) {
-    String.prototype.truncate = function (maxLength: number): string {
-      if (typeof maxLength !== "number" || maxLength <= 0) return "";
-  
-      if (this.length <= maxLength) return this.toString();
-  
-      return this.slice(0, maxLength) + '...';
-    };
-  }
-  
+export interface IMailItem {
+    id: string;
+    title: string;
+    body: string;
+    sender: string;
+    receivedAt: string;
+    hasAttachment?: boolean;
+    isStarred?: boolean;
+    avatarUrl?: string;
+}
