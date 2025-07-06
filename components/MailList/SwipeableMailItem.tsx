@@ -215,8 +215,8 @@ const SwipeableMailItem = React.memo(function SwipeableMailItem({
             {/* Main Content */}
             <PanGestureHandler 
                 onGestureEvent={gestureHandler}
-                activeOffsetX={[-10, 10]}
-                failOffsetY={[-10, 10]}
+                activeOffsetX={[-8, 8]}
+                failOffsetY={[-20, 20]}
                 shouldCancelWhenOutside={true}
             >
                 <Animated.View style={[containerAnimatedStyle]} className="bg-white">
