@@ -1,26 +1,18 @@
-import { useViewportAnimation } from '@/lib/hooks/useViewportAnimation'
 import React from 'react'
 import { Image, Text, TouchableOpacity, View } from 'react-native'
-import Animated from 'react-native-reanimated'
 import Icons from '../ui/icons'
 
 // Reanimated ile animasyonlu wrapper component
-const MailListItem = React.memo(function MailListItem({ 
-    item, 
-    index 
-}: { 
-    item: any, 
-    index: number 
+const MailListItem = React.memo(function MailListItem({
+    item,
+    index
+}: {
+    item: any,
+    index: number
 }) {
-    const { animatedStyle } = useViewportAnimation({
-        index,
-        initialOpacity: 0.3,
-        targetOpacity: 1,
-        duration: 150
-    })
 
     return (
-        <Animated.View style={animatedStyle}>
+        <View>
             <TouchableOpacity
                 activeOpacity={0.8}
                 className='flex flex-row items-start  gap-2 w-full px-4 py-2 mt-2'
@@ -49,7 +41,7 @@ const MailListItem = React.memo(function MailListItem({
                     </View>
                 </View>
             </TouchableOpacity>
-        </Animated.View>
+        </View>
     )
 })
 
