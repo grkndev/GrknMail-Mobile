@@ -1,7 +1,7 @@
 import { OPACITY, SCALE, SPRING_CONFIG } from '@/lib/constants/animations'
 import * as Haptics from 'expo-haptics'
 import React, { useEffect } from 'react'
-import { View } from 'react-native'
+import { TouchableOpacity } from 'react-native'
 import { PanGestureHandler, PanGestureHandlerGestureEvent } from 'react-native-gesture-handler'
 import Animated, {
     cancelAnimation,
@@ -189,7 +189,9 @@ const SwipeableMailItem = React.memo(function SwipeableMailItem({
     })
 
     return (
-        <View className="relative">
+        <TouchableOpacity className="relative" activeOpacity={0.5} onPress={() => {
+            console.log('pressed')
+        }}>
             {/* Left Action Background (Archive) */}
             <Animated.View 
                 style={[leftBackgroundAnimatedStyle]}
@@ -221,7 +223,7 @@ const SwipeableMailItem = React.memo(function SwipeableMailItem({
                     <MailListItem item={item} index={index} />
                 </Animated.View>
             </PanGestureHandler>
-        </View>
+        </TouchableOpacity>
     )
 })
 

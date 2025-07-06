@@ -1,5 +1,5 @@
 import React from 'react'
-import { Image, Text, TouchableOpacity, View } from 'react-native'
+import { Image, Text, View } from 'react-native'
 import Icons from '../ui/icons'
 
 // Reanimated ile animasyonlu wrapper component
@@ -12,13 +12,9 @@ const MailListItem = React.memo(function MailListItem({
 }) {
 
     return (
-        <View>
-            <TouchableOpacity
-                activeOpacity={0.8}
-                className='flex flex-row items-start  gap-2 w-full px-4 py-2 mt-2'
-                onPress={() => {
-                    console.log('pressed')
-                }}
+     
+            <View
+                className='flex flex-row items-start  gap-2 w-full px-4 py-2 mt-2'               
             >
                 <View className='relative w-12 h-12 items-start'>
                     <View className='absolute top-0 right-0 bg-blue-500 rounded-full w-4 h-4 z-10 border-2 border-white' />
@@ -40,8 +36,8 @@ const MailListItem = React.memo(function MailListItem({
                         </View>
                     </View>
                 </View>
-            </TouchableOpacity>
-        </View>
+            </View>
+     
     )
 })
 
