@@ -4,6 +4,7 @@ import Animated, {
     interpolate,
     useAnimatedStyle
 } from 'react-native-reanimated'
+import Skeleton from './ui/Skeleton'
 
 // Modern Loading Component
 export default function ModernRefreshIndicator({ progressValue }: { progressValue: Animated.SharedValue<number> }) {
@@ -33,22 +34,25 @@ export default function ModernRefreshIndicator({ progressValue }: { progressValu
             height: 80,
             justifyContent: 'center',
             alignItems: 'center',
-            backgroundColor: '#f8f9fa'
         }, animatedStyle]}>
             <View style={{
                 width: 40,
                 height: 40,
-                borderRadius: 20,
-                backgroundColor: '#007AFF',
+                // backgroundColor: '#fff',
                 justifyContent: 'center',
                 alignItems: 'center'
             }}>
-                <Animated.View style={[{
+                <Skeleton >
+                    <Animated.Image
+                        source={require('../assets/images/gdev_logo_black.png')}
+                        style={{ width: 40, height: 40 }} />
+                </Skeleton>
+                {/* <Animated.View style={[{
                     width: 20,
                     height: 20,
                     borderRadius: 10,
                     backgroundColor: 'white',
-                }, spinnerStyle]} />
+                }, spinnerStyle]} /> */}
             </View>
         </Animated.View>
     )
