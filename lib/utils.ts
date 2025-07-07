@@ -10,3 +10,17 @@ export interface IMailItem {
     isStarred?: boolean;
     avatarUrl?: string;
 }
+
+const dummyMail = {
+    image: 'https://github.com/grkndev.png',
+    author: 'Grkndev',
+    subject: 'Hello, world!',
+    body: 'This is a test email',
+    sentAt: new Date(),
+    isRead: false,
+}
+
+export const dummyData = Array.from({ length: 50 }).map((_, index) => ({
+    ...dummyMail,
+    id: index + 1,
+}))

@@ -35,16 +35,16 @@ enum GestureState {
     COMPLETE_RIGHT = 4,
 }
 
-const SwipeableMailItem = React.memo(function SwipeableMailItem({ 
-    item, 
-    index, 
-    onArchive, 
-    onDelete 
+const SwipeableMailItem = React.memo(function SwipeableMailItem({
+    item,
+    index,
+    onArchive,
+    onDelete
 }: SwipeableMailItemProps) {
     // Optimized: Only 2 shared values instead of 5
     const translateX = useSharedValue(0)
     const gestureState = useSharedValue(GestureState.IDLE)
-    
+
     // Haptic debouncing
     const lastHapticTime = useRef(0)
     const HAPTIC_DEBOUNCE = 100 // ms
@@ -75,6 +75,7 @@ const SwipeableMailItem = React.memo(function SwipeableMailItem({
 
     const gestureHandler = useAnimatedGestureHandler<PanGestureHandlerGestureEvent>({
         onStart: () => {
+            'worklet'
             gestureState.value = GestureState.IDLE
         },
         onActive: (event) => {
@@ -126,23 +127,23 @@ const SwipeableMailItem = React.memo(function SwipeableMailItem({
     const leftActionAnimatedStyle = useAnimatedStyle(() => {
         const isLeft = translateX.value < 0
         const absTranslateX = Math.abs(translateX.value)
-        
+
         if (!isLeft) return { opacity: 0, transform: [{ scale: SCALE.SMALL }] }
-        
+
         const progress = interpolate(
             absTranslateX,
             [0, SWIPE_THRESHOLD_PARTIAL, SWIPE_THRESHOLD_COMPLETE],
             [0, 0.6, 1],
             Extrapolation.CLAMP
         )
-        
+
         const opacity = interpolate(
             progress,
             [0, 0.3, 1],
             [OPACITY.HIDDEN, OPACITY.SEMI_VISIBLE, OPACITY.VISIBLE],
             Extrapolation.CLAMP
         )
-        
+
         const scale = interpolate(
             progress,
             [0, 0.5, 1],
@@ -160,23 +161,23 @@ const SwipeableMailItem = React.memo(function SwipeableMailItem({
     const rightActionAnimatedStyle = useAnimatedStyle(() => {
         const isRight = translateX.value > 0
         const absTranslateX = Math.abs(translateX.value)
-        
+
         if (!isRight) return { opacity: 0, transform: [{ scale: SCALE.SMALL }] }
-        
+
         const progress = interpolate(
             absTranslateX,
             [0, SWIPE_THRESHOLD_PARTIAL, SWIPE_THRESHOLD_COMPLETE],
             [0, 0.6, 1],
             Extrapolation.CLAMP
         )
-        
+
         const opacity = interpolate(
             progress,
             [0, 0.3, 1],
             [OPACITY.HIDDEN, OPACITY.SEMI_VISIBLE, OPACITY.VISIBLE],
             Extrapolation.CLAMP
         )
-        
+
         const scale = interpolate(
             progress,
             [0, 0.5, 1],
@@ -194,16 +195,16 @@ const SwipeableMailItem = React.memo(function SwipeableMailItem({
     const leftBackgroundAnimatedStyle = useAnimatedStyle(() => {
         const isLeft = translateX.value < 0
         const absTranslateX = Math.abs(translateX.value)
-        
+
         if (!isLeft) return { opacity: 0 }
-        
+
         const progress = interpolate(
             absTranslateX,
             [0, SWIPE_THRESHOLD_PARTIAL, SWIPE_THRESHOLD_COMPLETE],
             [0, 0.4, 1],
             Extrapolation.CLAMP
         )
-        
+
         return {
             opacity: interpolate(
                 progress,
@@ -217,16 +218,16 @@ const SwipeableMailItem = React.memo(function SwipeableMailItem({
     const rightBackgroundAnimatedStyle = useAnimatedStyle(() => {
         const isRight = translateX.value > 0
         const absTranslateX = Math.abs(translateX.value)
-        
+
         if (!isRight) return { opacity: 0 }
-        
+
         const progress = interpolate(
             absTranslateX,
             [0, SWIPE_THRESHOLD_PARTIAL, SWIPE_THRESHOLD_COMPLETE],
             [0, 0.4, 1],
             Extrapolation.CLAMP
         )
-        
+
         return {
             opacity: interpolate(
                 progress,
@@ -242,7 +243,7 @@ const SwipeableMailItem = React.memo(function SwipeableMailItem({
             console.log('pressed')
         }}>
             {/* Left Action Background (Archive) */}
-            <Animated.View 
+            <Animated.View
                 style={[leftBackgroundAnimatedStyle]}
                 className="z-10 absolute left-0 top-0 bottom-0 w-full bg-blue-500 flex-row items-center justify-end pr-12"
             >
@@ -252,7 +253,7 @@ const SwipeableMailItem = React.memo(function SwipeableMailItem({
             </Animated.View>
 
             {/* Right Action Background (Delete) */}
-            <Animated.View 
+            <Animated.View
                 style={[rightBackgroundAnimatedStyle]}
                 className="z-10 absolute right-0 top-0 bottom-0 w-full bg-red-500 flex-row items-center justify-start pl-12"
             >
@@ -262,7 +263,7 @@ const SwipeableMailItem = React.memo(function SwipeableMailItem({
             </Animated.View>
 
             {/* Main Content */}
-            <PanGestureHandler 
+            <PanGestureHandler
                 onGestureEvent={gestureHandler}
                 activeOffsetX={[-8, 8]}
                 failOffsetY={[-20, 20]}

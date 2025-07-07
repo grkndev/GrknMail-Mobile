@@ -1,4 +1,5 @@
 import { useNavigation } from '@react-navigation/native'
+import { FlashList } from '@shopify/flash-list'
 import React from 'react'
 import { Button, Text } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -11,6 +12,11 @@ export default function OutboxScreen() {
       <Button title='Toggle Drawer' onPress={() => {
         (navigation as any).toggleDrawer()
       }} />
+      <FlashList
+        data={Array.from({ length: 50 }).fill({ title: "Hello" }) as { title: string }[]}
+        renderItem={({ item }: { item: { title: string } }) => <Text>{item.title}</Text>}
+        estimatedItemSize={100}
+      />
     </SafeAreaView>
   )
 }

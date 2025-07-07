@@ -8,9 +8,9 @@ import Animated, {
     Extrapolation,
     interpolate,
     runOnJS,
+    useAnimatedScrollHandler,
     useAnimatedStyle,
     useSharedValue,
-    useWorkletCallback,
     withSpring
 } from 'react-native-reanimated'
 import ModernRefreshIndicator from '../RefreshIndicator'
@@ -27,7 +27,7 @@ export default function MailList({ data }: { data: any[] }) {
     const scrollOffset = useSharedValue(0)
     const scrollVelocity = useSharedValue(0)
     const isScrolling = useSharedValue(false)
-    
+
     // Optimized: Single timestamp for better performance
     const lastScrollTime = useSharedValue(0)
     const pendingVisibilityUpdate = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -47,10 +47,11 @@ export default function MailList({ data }: { data: any[] }) {
         if (pendingVisibilityUpdate.current) {
             clearTimeout(pendingVisibilityUpdate.current)
         }
-        
+
         pendingVisibilityUpdate.current = setTimeout(() => {
             const newItems = new Set(viewableItems.map(i => i.index).filter((i): i is number => i !== null))
             setVisibleItems(newItems)
+            pendingVisibilityUpdate.current = undefined
         }, SCROLL_DEBOUNCE)
     }, [setVisibleItems])
 
@@ -80,24 +81,24 @@ export default function MailList({ data }: { data: any[] }) {
     }, [refreshing])
 
     // Optimized: Worklet for velocity calculation
-    const calculateVelocity = useWorkletCallback((currentOffset: number, currentTime: number) => {
-        'worklet'
-        if (lastScrollTime.value > 0) {
-            const deltaTime = currentTime - lastScrollTime.value
-            const deltaOffset = currentOffset - scrollOffset.value
-            
-            if (deltaTime > 0) {
-                const newVelocity = Math.abs(deltaOffset / deltaTime) * 1000
-                // Debounced velocity update
-                if (Math.abs(newVelocity - scrollVelocity.value) > 10) {
-                    scrollVelocity.value = newVelocity
-                }
-            }
-        }
-        
-        scrollOffset.value = currentOffset
-        lastScrollTime.value = currentTime
-    }, [])
+    // const calculateVelocity = useWorkletCallback((currentOffset: number, currentTime: number) => {
+    //     'worklet'
+    //     if (lastScrollTime.value > 0) {
+    //         const deltaTime = currentTime - lastScrollTime.value
+    //         const deltaOffset = currentOffset - scrollOffset.value
+
+    //         if (deltaTime > 0) {
+    //             const newVelocity = Math.abs(deltaOffset / deltaTime) * 1000
+    //             // Debounced velocity update
+    //             if (Math.abs(newVelocity - scrollVelocity.value) > 10) {
+    //                 scrollVelocity.value = newVelocity
+    //             }
+    //         }
+    //     }
+
+    //     scrollOffset.value = currentOffset
+    //     lastScrollTime.value = currentTime
+    // }, [])
 
     const containerStyle = useAnimatedStyle(() => {
         return {
@@ -147,19 +148,18 @@ export default function MailList({ data }: { data: any[] }) {
     }, [refreshing])
 
     // Optimized scroll handlers with worklet calculations
-    const onScroll = useCallback((event: any) => {
-        const offset = event.nativeEvent.contentOffset.y
-        const currentTime = Date.now()
+    const onScroll = useAnimatedScrollHandler({
+        onScroll: (event) => {
+            'worklet'
+            const offset = event.contentOffset.y
+            scrollOffset.value = offset
 
-        // Use worklet for calculations
-        calculateVelocity(offset, currentTime)
-
-        // Optimized refresh reset - only when necessary
-        if (offset > 5 && translateY.value > 0) {
-            translateY.value = withSpring(0, { damping: 15 })
-            refreshProgress.value = withSpring(0, { damping: 15 })
+            if (offset > 5 && translateY.value > 0) {
+                translateY.value = withSpring(0, { damping: 15 })
+                refreshProgress.value = withSpring(0, { damping: 15 })
+            }
         }
-    }, [calculateVelocity])
+    })
 
     const onScrollBeginDrag = useCallback(() => {
         isScrolling.value = true
@@ -240,11 +240,11 @@ export default function MailList({ data }: { data: any[] }) {
                         ref={listRef}
                         data={data}
                         renderItem={renderItem}
-                        keyExtractor={(item, index) => index.toString()}
+                        keyExtractor={(item) => item.id.toString()}
                         contentContainerStyle={{
                             // padding: 8 
                         }}
-                        estimatedItemSize={120}
+                        estimatedItemSize={180}
                         removeClippedSubviews={true}
                         onViewableItemsChanged={onViewableItemsChangedRef.current}
                         viewabilityConfig={viewabilityConfig.current}

@@ -49,9 +49,7 @@ const MailListItem = React.memo(function MailListItem({
         return item?.receivedAt || '11:42 AM'
     }, [item?.receivedAt])
 
-    const avatarSource = useMemo(() => {
-        return item?.avatarUrl ? { uri: item.avatarUrl } : AVATAR_SOURCE
-    }, [item?.avatarUrl])
+    const avatarSource = item?.avatarUrl ? { uri: item.avatarUrl } : AVATAR_SOURCE
 
     return (
         <View className={MAIN_CONTAINER_STYLE}>
