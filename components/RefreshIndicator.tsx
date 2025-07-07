@@ -12,7 +12,6 @@ export default function ModernRefreshIndicator({ progressValue }: { progressValu
         const progress = progressValue.value
         const scale = interpolate(progress, [0, 1], [0.8, 1], Extrapolation.CLAMP)
         const opacity = interpolate(progress, [0, 0.3, 1], [0, 0.5, 1], Extrapolation.CLAMP)
-        const rotation = interpolate(progress, [0, 1], [0, 360], Extrapolation.CLAMP)
 
         return {
             transform: [{ scale }],
@@ -20,14 +19,8 @@ export default function ModernRefreshIndicator({ progressValue }: { progressValu
         }
     })
 
-    const spinnerStyle = useAnimatedStyle(() => {
-        const progress = progressValue.value
-        const rotation = interpolate(progress, [0, 1], [0, 360], Extrapolation.CLAMP)
-
-        return {
-            transform: [{ rotate: `${rotation}deg` }]
-        }
-    })
+    // Optimized: Only animate skeleton when actually refreshing
+    const isLoading = progressValue.value > 0.1
 
     return (
         <Animated.View style={[{
@@ -42,7 +35,7 @@ export default function ModernRefreshIndicator({ progressValue }: { progressValu
                 justifyContent: 'center',
                 alignItems: 'center'
             }}>
-                <Skeleton >
+                <Skeleton isLoading={isLoading}>
                     <Animated.Image
                         source={require('../assets/images/gdev_logo_black.png')}
                         style={{ width: 40, height: 40 }} />

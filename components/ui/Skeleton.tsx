@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { StyleSheet, ViewStyle } from 'react-native';
 import Animated, {
+    cancelAnimation,
     interpolate,
     useAnimatedStyle,
     useSharedValue,
@@ -11,18 +12,28 @@ import Animated, {
 type SkeletonProps = {
     children: React.ReactNode;
     style?: ViewStyle;
+    isLoading?: boolean;
 };
 
-const Skeleton: React.FC<SkeletonProps> = ({ children, style }) => {
+const Skeleton: React.FC<SkeletonProps> = ({ children, style, isLoading = true }) => {
     const progress = useSharedValue(0);
 
     useEffect(() => {
-        progress.value = withRepeat(
-            withTiming(1, { duration: 1000 }),
-            -1,
-            true
-        );
-    }, []);
+        if (isLoading) {
+            progress.value = withRepeat(
+                withTiming(1, { duration: 1000 }),
+                -1,
+                true
+            );
+        } else {
+            cancelAnimation(progress);
+            progress.value = withTiming(1, { duration: 200 });
+        }
+
+        return () => {
+            cancelAnimation(progress);
+        };
+    }, [isLoading]);
 
     const animatedStyle = useAnimatedStyle(() => {
         const opacity = interpolate(
@@ -39,7 +50,7 @@ const Skeleton: React.FC<SkeletonProps> = ({ children, style }) => {
         <Animated.View style={[{
             width: 40,
             height: 40,
-        }, animatedStyle]}>
+        }, style, animatedStyle]}>
            {children}
         </Animated.View>
     );

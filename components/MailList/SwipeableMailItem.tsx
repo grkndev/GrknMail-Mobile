@@ -1,6 +1,6 @@
 import { OPACITY, SCALE, SPRING_CONFIG } from '@/lib/constants/animations'
 import * as Haptics from 'expo-haptics'
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { TouchableOpacity } from 'react-native'
 import { PanGestureHandler, PanGestureHandlerGestureEvent } from 'react-native-gesture-handler'
 import Animated, {
@@ -26,27 +26,43 @@ interface SwipeableMailItemProps {
 const SWIPE_THRESHOLD_PARTIAL = 80
 const SWIPE_THRESHOLD_COMPLETE = 150
 
+// Gesture states enum for better performance
+enum GestureState {
+    IDLE = 0,
+    PARTIAL_LEFT = 1,
+    COMPLETE_LEFT = 2,
+    PARTIAL_RIGHT = 3,
+    COMPLETE_RIGHT = 4,
+}
+
 const SwipeableMailItem = React.memo(function SwipeableMailItem({ 
     item, 
     index, 
     onArchive, 
     onDelete 
 }: SwipeableMailItemProps) {
+    // Optimized: Only 2 shared values instead of 5
     const translateX = useSharedValue(0)
-    const hasTriggeredPartialLeft = useSharedValue(false)
-    const hasTriggeredPartialRight = useSharedValue(false)
-    const hasTriggeredCompleteLeft = useSharedValue(false)
-    const hasTriggeredCompleteRight = useSharedValue(false)
+    const gestureState = useSharedValue(GestureState.IDLE)
+    
+    // Haptic debouncing
+    const lastHapticTime = useRef(0)
+    const HAPTIC_DEBOUNCE = 100 // ms
 
     // Cleanup animations on unmount
     useEffect(() => {
         return () => {
             cancelAnimation(translateX)
+            cancelAnimation(gestureState)
         }
-    }, [translateX])
+    }, [translateX, gestureState])
 
     const triggerHaptic = () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+        const now = Date.now()
+        if (now - lastHapticTime.current > HAPTIC_DEBOUNCE) {
+            lastHapticTime.current = now
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+        }
     }
 
     const executeAction = (action: 'archive' | 'delete') => {
@@ -59,132 +75,165 @@ const SwipeableMailItem = React.memo(function SwipeableMailItem({
 
     const gestureHandler = useAnimatedGestureHandler<PanGestureHandlerGestureEvent>({
         onStart: () => {
-            hasTriggeredPartialLeft.value = false
-            hasTriggeredPartialRight.value = false
-            hasTriggeredCompleteLeft.value = false
-            hasTriggeredCompleteRight.value = false
+            gestureState.value = GestureState.IDLE
         },
         onActive: (event) => {
             translateX.value = event.translationX
 
-            // Left swipe (negative values) - Archive
-            if (event.translationX < -SWIPE_THRESHOLD_PARTIAL && !hasTriggeredPartialLeft.value) {
-                hasTriggeredPartialLeft.value = true
-                runOnJS(triggerHaptic)()
-            }
-            
-            if (event.translationX < -SWIPE_THRESHOLD_COMPLETE && !hasTriggeredCompleteLeft.value) {
-                hasTriggeredCompleteLeft.value = true
-                runOnJS(triggerHaptic)()
-            }
+            // Optimized haptic triggers with enum states
+            const absTranslation = Math.abs(event.translationX)
+            const isLeft = event.translationX < 0
 
-            // Right swipe (positive values) - Delete
-            if (event.translationX > SWIPE_THRESHOLD_PARTIAL && !hasTriggeredPartialRight.value) {
-                hasTriggeredPartialRight.value = true
-                runOnJS(triggerHaptic)()
-            }
-            
-            if (event.translationX > SWIPE_THRESHOLD_COMPLETE && !hasTriggeredCompleteRight.value) {
-                hasTriggeredCompleteRight.value = true
-                runOnJS(triggerHaptic)()
+            if (absTranslation >= SWIPE_THRESHOLD_COMPLETE) {
+                const newState = isLeft ? GestureState.COMPLETE_LEFT : GestureState.COMPLETE_RIGHT
+                if (gestureState.value !== newState) {
+                    gestureState.value = newState
+                    runOnJS(triggerHaptic)()
+                }
+            } else if (absTranslation >= SWIPE_THRESHOLD_PARTIAL) {
+                const newState = isLeft ? GestureState.PARTIAL_LEFT : GestureState.PARTIAL_RIGHT
+                if (gestureState.value !== newState) {
+                    gestureState.value = newState
+                    runOnJS(triggerHaptic)()
+                }
             }
         },
         onEnd: (event) => {
             const shouldExecuteAction = Math.abs(event.translationX) > SWIPE_THRESHOLD_COMPLETE
 
             if (shouldExecuteAction) {
-                if (event.translationX < 0) {
-                    runOnJS(executeAction)('archive')
-                } else {
-                    runOnJS(executeAction)('delete')
-                }
+                const action = event.translationX < 0 ? 'archive' : 'delete'
+                runOnJS(executeAction)(action)
             }
 
             translateX.value = withSpring(0, SPRING_CONFIG.GENTLE)
+            gestureState.value = GestureState.IDLE
         },
         onCancel: () => {
-            // Reset all haptic flags
-            hasTriggeredPartialLeft.value = false
-            hasTriggeredPartialRight.value = false
-            hasTriggeredCompleteLeft.value = false
-            hasTriggeredCompleteRight.value = false
-            
-            // Reset position with spring animation
             translateX.value = withSpring(0, SPRING_CONFIG.GENTLE)
+            gestureState.value = GestureState.IDLE
         }
     })
 
+    // Optimized: Combined container and main content styles
     const containerAnimatedStyle = useAnimatedStyle(() => {
         return {
             transform: [{ translateX: translateX.value }]
         }
     })
 
+    // Optimized: Left action styles
     const leftActionAnimatedStyle = useAnimatedStyle(() => {
+        const isLeft = translateX.value < 0
+        const absTranslateX = Math.abs(translateX.value)
+        
+        if (!isLeft) return { opacity: 0, transform: [{ scale: SCALE.SMALL }] }
+        
         const progress = interpolate(
-            translateX.value,
-            [-SWIPE_THRESHOLD_COMPLETE, -SWIPE_THRESHOLD_PARTIAL, 0],
-            [OPACITY.VISIBLE, OPACITY.SEMI_VISIBLE, OPACITY.HIDDEN],
-            Extrapolation.CLAMP
-        )
-
-        const scale = interpolate(
-            translateX.value,
-            [-SWIPE_THRESHOLD_COMPLETE, -SWIPE_THRESHOLD_PARTIAL, 0],
-            [SCALE.LARGE, SCALE.NORMAL, SCALE.SMALL],
-            Extrapolation.CLAMP
-        )
-
-        return {
-            opacity: progress,
-            transform: [{ scale }]
-        }
-    })
-
-    const rightActionAnimatedStyle = useAnimatedStyle(() => {
-        const progress = interpolate(
-            translateX.value,
+            absTranslateX,
             [0, SWIPE_THRESHOLD_PARTIAL, SWIPE_THRESHOLD_COMPLETE],
+            [0, 0.6, 1],
+            Extrapolation.CLAMP
+        )
+        
+        const opacity = interpolate(
+            progress,
+            [0, 0.3, 1],
             [OPACITY.HIDDEN, OPACITY.SEMI_VISIBLE, OPACITY.VISIBLE],
             Extrapolation.CLAMP
         )
-
+        
         const scale = interpolate(
-            translateX.value,
-            [0, SWIPE_THRESHOLD_PARTIAL, SWIPE_THRESHOLD_COMPLETE],
+            progress,
+            [0, 0.5, 1],
             [SCALE.SMALL, SCALE.NORMAL, SCALE.LARGE],
             Extrapolation.CLAMP
         )
 
         return {
-            opacity: progress,
+            opacity,
             transform: [{ scale }]
         }
     })
 
-    const leftBackgroundAnimatedStyle = useAnimatedStyle(() => {
+    // Optimized: Right action styles
+    const rightActionAnimatedStyle = useAnimatedStyle(() => {
+        const isRight = translateX.value > 0
+        const absTranslateX = Math.abs(translateX.value)
+        
+        if (!isRight) return { opacity: 0, transform: [{ scale: SCALE.SMALL }] }
+        
         const progress = interpolate(
-            translateX.value,
-            [-SWIPE_THRESHOLD_COMPLETE, -SWIPE_THRESHOLD_PARTIAL, 0],
-            [OPACITY.VISIBLE, OPACITY.FADED, OPACITY.HIDDEN],
+            absTranslateX,
+            [0, SWIPE_THRESHOLD_PARTIAL, SWIPE_THRESHOLD_COMPLETE],
+            [0, 0.6, 1],
+            Extrapolation.CLAMP
+        )
+        
+        const opacity = interpolate(
+            progress,
+            [0, 0.3, 1],
+            [OPACITY.HIDDEN, OPACITY.SEMI_VISIBLE, OPACITY.VISIBLE],
+            Extrapolation.CLAMP
+        )
+        
+        const scale = interpolate(
+            progress,
+            [0, 0.5, 1],
+            [SCALE.SMALL, SCALE.NORMAL, SCALE.LARGE],
             Extrapolation.CLAMP
         )
 
         return {
-            opacity: progress
+            opacity,
+            transform: [{ scale }]
+        }
+    })
+
+    // Optimized: Background styles
+    const leftBackgroundAnimatedStyle = useAnimatedStyle(() => {
+        const isLeft = translateX.value < 0
+        const absTranslateX = Math.abs(translateX.value)
+        
+        if (!isLeft) return { opacity: 0 }
+        
+        const progress = interpolate(
+            absTranslateX,
+            [0, SWIPE_THRESHOLD_PARTIAL, SWIPE_THRESHOLD_COMPLETE],
+            [0, 0.4, 1],
+            Extrapolation.CLAMP
+        )
+        
+        return {
+            opacity: interpolate(
+                progress,
+                [0, 0.2, 1],
+                [OPACITY.HIDDEN, OPACITY.FADED, OPACITY.VISIBLE],
+                Extrapolation.CLAMP
+            )
         }
     })
 
     const rightBackgroundAnimatedStyle = useAnimatedStyle(() => {
+        const isRight = translateX.value > 0
+        const absTranslateX = Math.abs(translateX.value)
+        
+        if (!isRight) return { opacity: 0 }
+        
         const progress = interpolate(
-            translateX.value,
+            absTranslateX,
             [0, SWIPE_THRESHOLD_PARTIAL, SWIPE_THRESHOLD_COMPLETE],
-            [OPACITY.HIDDEN, OPACITY.FADED, OPACITY.VISIBLE],
+            [0, 0.4, 1],
             Extrapolation.CLAMP
         )
-
+        
         return {
-            opacity: progress
+            opacity: interpolate(
+                progress,
+                [0, 0.2, 1],
+                [OPACITY.HIDDEN, OPACITY.FADED, OPACITY.VISIBLE],
+                Extrapolation.CLAMP
+            )
         }
     })
 

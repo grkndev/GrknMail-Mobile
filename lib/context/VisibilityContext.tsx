@@ -1,4 +1,4 @@
-import React, { createContext, ReactNode, useContext, useState } from 'react';
+import React, { createContext, ReactNode, useCallback, useContext, useState } from 'react';
 
 interface VisibilityContextType {
   visibleItems: Set<number>;
@@ -12,11 +12,38 @@ interface VisibilityProviderProps {
   children: ReactNode;
 }
 
-export const VisibilityProvider: React.FC<VisibilityProviderProps> = ({ children }) => {
-  const [visibleItems, setVisibleItems] = useState<Set<number>>(new Set());
+// Optimized: Helper to compare Sets for shallow equality
+const setsAreEqual = (setA: Set<number>, setB: Set<number>): boolean => {
+  if (setA.size !== setB.size) return false;
+  for (const item of setA) {
+    if (!setB.has(item)) return false;
+  }
+  return true;
+};
 
-  const updateItemVisibility = (index: number, isVisible: boolean) => {
-    setVisibleItems(prev => {
+export const VisibilityProvider: React.FC<VisibilityProviderProps> = ({ children }) => {
+  const [visibleItems, setVisibleItemsState] = useState<Set<number>>(new Set());
+
+  // Optimized: Prevent unnecessary updates with shallow comparison
+  const setVisibleItems = useCallback((newItems: Set<number>) => {
+    setVisibleItemsState(prevItems => {
+      if (setsAreEqual(prevItems, newItems)) {
+        return prevItems; // Prevent re-render if sets are identical
+      }
+      return newItems;
+    });
+  }, []);
+
+  // Optimized: Batch-friendly update method
+  const updateItemVisibility = useCallback((index: number, isVisible: boolean) => {
+    setVisibleItemsState(prev => {
+      const hasItem = prev.has(index);
+      
+      // Early return if no change needed
+      if ((isVisible && hasItem) || (!isVisible && !hasItem)) {
+        return prev;
+      }
+      
       const newSet = new Set(prev);
       if (isVisible) {
         newSet.add(index);
@@ -25,14 +52,17 @@ export const VisibilityProvider: React.FC<VisibilityProviderProps> = ({ children
       }
       return newSet;
     });
-  };
+  }, []);
+
+  // Optimized: Memoized context value to prevent unnecessary provider re-renders
+  const contextValue = React.useMemo(() => ({
+    visibleItems,
+    setVisibleItems,
+    updateItemVisibility
+  }), [visibleItems, setVisibleItems, updateItemVisibility]);
 
   return (
-    <VisibilityContext.Provider value={{
-      visibleItems,
-      setVisibleItems,
-      updateItemVisibility
-    }}>
+    <VisibilityContext.Provider value={contextValue}>
       {children}
     </VisibilityContext.Provider>
   );

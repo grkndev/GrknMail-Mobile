@@ -10,6 +10,7 @@ import Animated, {
     runOnJS,
     useAnimatedStyle,
     useSharedValue,
+    useWorkletCallback,
     withSpring
 } from 'react-native-reanimated'
 import ModernRefreshIndicator from '../RefreshIndicator'
@@ -19,17 +20,21 @@ export default function MailList({ data }: { data: any[] }) {
     const [refreshing, setRefreshing] = useState(false)
     const { setVisibleItems } = useVisibility()
 
-    // Animated values
+    // Optimized: Reduced shared values and worklet calculations
     const translateY = useSharedValue(0)
     const refreshProgress = useSharedValue(0)
     const listRef = useRef<FlashList<any>>(null)
     const scrollOffset = useSharedValue(0)
     const scrollVelocity = useSharedValue(0)
     const isScrolling = useSharedValue(false)
+    
+    // Optimized: Single timestamp for better performance
     const lastScrollTime = useSharedValue(0)
+    const pendingVisibilityUpdate = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
     const REFRESH_THRESHOLD = 80
     const VELOCITY_THRESHOLD = 50
+    const SCROLL_DEBOUNCE = 16 // Match with scrollEventThrottle
 
     const viewabilityConfig = useRef({
         itemVisiblePercentThreshold: 50,
@@ -37,22 +42,23 @@ export default function MailList({ data }: { data: any[] }) {
         minimumViewTime: 50
     })
 
+    // Optimized: Batched visibility updates
+    const batchedVisibilityUpdate = useCallback((viewableItems: ViewToken[]) => {
+        if (pendingVisibilityUpdate.current) {
+            clearTimeout(pendingVisibilityUpdate.current)
+        }
+        
+        pendingVisibilityUpdate.current = setTimeout(() => {
+            const newItems = new Set(viewableItems.map(i => i.index).filter((i): i is number => i !== null))
+            setVisibleItems(newItems)
+        }, SCROLL_DEBOUNCE)
+    }, [setVisibleItems])
+
     const onViewableItemsChangedRef = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
-        const newItems = new Set(viewableItems.map(i => i.index).filter((i): i is number => i !== null))
-        setVisibleItems(newItems)
+        batchedVisibilityUpdate(viewableItems)
     })
 
     const onViewableItemsChanged = onViewableItemsChangedRef.current
-
-    // const handleArchive = useCallback((item: IMailItem) => {
-    //     console.log('Archiving item:', item)
-    //     // TODO: Implement archive logic
-    // }, [])
-
-    // const handleDelete = useCallback((item: IMailItem) => {
-    //     console.log('Deleting item:', item)
-    //     // TODO: Implement delete logic
-    // }, [])
 
     const triggerRefresh = useCallback(() => {
         setRefreshing(true)
@@ -72,6 +78,26 @@ export default function MailList({ data }: { data: any[] }) {
             refreshProgress.value = withSpring(0, { damping: 15 })
         }
     }, [refreshing])
+
+    // Optimized: Worklet for velocity calculation
+    const calculateVelocity = useWorkletCallback((currentOffset: number, currentTime: number) => {
+        'worklet'
+        if (lastScrollTime.value > 0) {
+            const deltaTime = currentTime - lastScrollTime.value
+            const deltaOffset = currentOffset - scrollOffset.value
+            
+            if (deltaTime > 0) {
+                const newVelocity = Math.abs(deltaOffset / deltaTime) * 1000
+                // Debounced velocity update
+                if (Math.abs(newVelocity - scrollVelocity.value) > 10) {
+                    scrollVelocity.value = newVelocity
+                }
+            }
+        }
+        
+        scrollOffset.value = currentOffset
+        lastScrollTime.value = currentTime
+    }, [])
 
     const containerStyle = useAnimatedStyle(() => {
         return {
@@ -94,15 +120,14 @@ export default function MailList({ data }: { data: any[] }) {
         }
     })
 
-    // Pan gesture handler
+    // Optimized pan gesture with worklet calculations
     const onPanGestureEvent = useCallback((event: any) => {
         'worklet'
         const { translationY, state, velocityY } = event.nativeEvent
 
-        // Sadece scroll top'dayken ve yukarı çekme hareketinde çalış
-        // Daha toleranslı koşullar - normal scroll'u engellemeyecek şekilde
+        // Optimized conditions with worklet calculations
         if (scrollOffset.value > 5 || translationY < 0 ||
-            (isScrolling.value && Math.abs(scrollVelocity.value) > VELOCITY_THRESHOLD)) {
+            (isScrolling.value && scrollVelocity.value > VELOCITY_THRESHOLD)) {
             return
         }
 
@@ -121,31 +146,24 @@ export default function MailList({ data }: { data: any[] }) {
         }
     }, [refreshing])
 
-    // Scroll handlers
+    // Optimized scroll handlers with worklet calculations
     const onScroll = useCallback((event: any) => {
         const offset = event.nativeEvent.contentOffset.y
         const currentTime = Date.now()
 
-        // Velocity hesaplama
-        if (lastScrollTime.value > 0) {
-            const deltaTime = currentTime - lastScrollTime.value
-            const deltaOffset = offset - scrollOffset.value
-            scrollVelocity.value = deltaTime > 0 ? Math.abs(deltaOffset / deltaTime) * 1000 : 0
-        }
+        // Use worklet for calculations
+        calculateVelocity(offset, currentTime)
 
-        scrollOffset.value = offset
-        lastScrollTime.value = currentTime
-
-        // Eğer scroll yapılıyorsa refresh animasyonunu sıfırla - sadece gerektiğinde
+        // Optimized refresh reset - only when necessary
         if (offset > 5 && translateY.value > 0) {
             translateY.value = withSpring(0, { damping: 15 })
             refreshProgress.value = withSpring(0, { damping: 15 })
         }
-    }, [])
+    }, [calculateVelocity])
 
     const onScrollBeginDrag = useCallback(() => {
         isScrolling.value = true
-        // Reset refresh animation only if there's an active refresh
+        // Reset refresh animation only if active
         if (translateY.value > 0) {
             translateY.value = withSpring(0, { damping: 20 })
             refreshProgress.value = withSpring(0, { damping: 20 })
@@ -153,10 +171,10 @@ export default function MailList({ data }: { data: any[] }) {
     }, [])
 
     const onScrollEndDrag = useCallback(() => {
-        // Shorter delay for better responsiveness
+        // Optimized delay
         setTimeout(() => {
             isScrolling.value = false
-        }, 50)
+        }, 30)
     }, [])
 
     const onMomentumScrollBegin = useCallback(() => {
@@ -164,12 +182,13 @@ export default function MailList({ data }: { data: any[] }) {
     }, [])
 
     const onMomentumScrollEnd = useCallback(() => {
-        // Shorter delay for better responsiveness
+        // Optimized delay and reset
         setTimeout(() => {
             isScrolling.value = false
             scrollVelocity.value = 0
-        }, 50)
+        }, 30)
     }, [])
+
     const handleArchive = (item: IMailItem) => console.log('Archive', item)
     const handleDelete = (item: IMailItem) => console.log('Delete', item)
 
@@ -181,6 +200,15 @@ export default function MailList({ data }: { data: any[] }) {
             onDelete={handleDelete}
         />
     )
+
+    // Cleanup on unmount
+    React.useEffect(() => {
+        return () => {
+            if (pendingVisibilityUpdate.current) {
+                clearTimeout(pendingVisibilityUpdate.current)
+            }
+        }
+    }, [])
 
     return (
         <View style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
