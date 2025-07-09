@@ -20,7 +20,7 @@ const MailContent = memo(({ title, body }: { title: string, body: string }) => (
             {title}
         </Text>
         <Text className='text-sm text-zinc-400' numberOfLines={2}>
-            {truncate(body, 50)}
+            {truncate(body, 100)}
         </Text>
     </View>
 ))
