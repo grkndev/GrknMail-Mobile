@@ -8,10 +8,10 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 export default function MailContentScreen() {
   const { id } = useLocalSearchParams()
-  
+
   // Find the mail item by id
   const mailItem = dummyData.find((item) => item.id === id)
-  
+
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
@@ -35,20 +35,20 @@ export default function MailContentScreen() {
           <View className='flex flex-row items-center justify-between'>
             <Text className='text-2xl font-bold'>{mailItem?.title || 'Mail Not Found'}</Text>
             <Pressable className='flex-row items-center gap-2'>
-              <Icons 
-                name='Star' 
-                size={24} 
-                color={mailItem?.isStarred ? 'gold' : 'gray'} 
-                fill={mailItem?.isStarred ? 'gold' : 'transparent'} 
+              <Icons
+                name='Star'
+                size={24}
+                color={mailItem?.isStarred ? 'gold' : 'gray'}
+                fill={mailItem?.isStarred ? 'gold' : 'transparent'}
               />
             </Pressable>
           </View>
           {/* INFO */}
           <View className='flex flex-row items-center justify-between'>
             <View className='flex flex-row items-center gap-2'>
-              <Image 
-                source={{ uri: mailItem?.avatarUrl || 'https://github.com/grkndev.png' }} 
-                className='w-10 h-10 rounded-full' 
+              <Image
+                source={{ uri: mailItem?.avatarUrl || 'https://github.com/grkndev.png' }}
+                className='w-10 h-10 rounded-full'
               />
               <View className='flex flex-col'>
                 <Text className='font-semibold'>{mailItem?.sender || 'Unknown'}</Text>
@@ -65,7 +65,7 @@ export default function MailContentScreen() {
           {/* CONTENT */}
           <ScrollView className='flex-1' showsVerticalScrollIndicator={false}>
             {mailItem ? (
-              <MailContent 
+              <MailContent
                 content={mailItem.body}
                 contentType={mailItem.contentType}
               />
