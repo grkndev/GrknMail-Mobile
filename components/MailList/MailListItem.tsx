@@ -1,4 +1,5 @@
 import { IMailItem, truncate } from '@/lib/utils'
+import { RelativePathString, router } from 'expo-router'
 import React, { memo } from 'react'
 import { Image, Pressable, Text, View } from 'react-native'
 import Icons from '../ui/icons'
@@ -39,9 +40,9 @@ const MailActions = memo(({ hasAttachment, isStarred }: { hasAttachment?: boolea
 const Avatar = memo(({ avatarUrl }: { avatarUrl?: string }) => (
     <View className='relative w-12 h-12 items-start'>
         <View className='absolute top-0 right-0 bg-blue-500 rounded-full w-4 h-4 z-10 border-2 border-white' />
-        <Image 
-            source={avatarUrl ? { uri: avatarUrl } : DEFAULT_AVATAR} 
-            className='w-12 h-12 rounded-full' 
+        <Image
+            source={avatarUrl ? { uri: avatarUrl } : DEFAULT_AVATAR}
+            className='w-12 h-12 rounded-full'
         />
     </View>
 ))
@@ -55,11 +56,12 @@ const MailListItem = memo(({
     index: number
 }) => {
     return (
-        <Pressable className='flex-row items-start p-4 border-b border-gray-100' onPress={() => {
-            console.log('MailListItem pressed', item.id)
+
+        <Pressable className='flex-row items-start p-4 border-b border-gray-100 ' onPress={() => {
+            router.push(`/(screens)/(MailContentScreen)/mail/${item.id}` as RelativePathString)
         }}>
             <Avatar avatarUrl={item.avatarUrl} />
-            <View className='flex-1 ml-3'>
+            <View className='flex-1 flex flex-col ml-3'>
                 <MailHeader sender={item.sender} receivedAt={item.receivedAt} />
                 <View className='flex flex-row justify-between items-center flex-1 gap-2 mt-1'>
                     <MailContent title={item.title} body={item.body} />
@@ -67,11 +69,12 @@ const MailListItem = memo(({
                 </View>
             </View>
         </Pressable>
+
     )
 }, (prevProps, nextProps) => {
     // Custom comparison - sadece item değiştiğinde re-render
-    return prevProps.item.id === nextProps.item.id && 
-           prevProps.index === nextProps.index;
+    return prevProps.item.id === nextProps.item.id &&
+        prevProps.index === nextProps.index;
 })
 
 // Display name for debugging
