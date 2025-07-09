@@ -1,3 +1,4 @@
+import { useAuth } from '@/context/auth'
 import { DrawerContentComponentProps } from '@react-navigation/drawer'
 import React from 'react'
 import { Image, Text, TouchableOpacity, View } from 'react-native'
@@ -5,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import Icons from './ui/icons'
 
 export default function DrawerContentView(props: DrawerContentComponentProps) {
-
+  const { signOut } = useAuth() 
   return (
     <SafeAreaView className='flex-1 p-4 justify-between'>
       <View className='flex flex-col'>
@@ -83,7 +84,10 @@ export default function DrawerContentView(props: DrawerContentComponentProps) {
           <Icons name='CircleQuestionMark' size={20} color='#000' />
           <Text className='font-bold'>Help & Feedback</Text>
         </TouchableOpacity>
-        <TouchableOpacity className='flex-row items-center gap-4 p-4 rounded-2xl'>
+        <TouchableOpacity onPress={()=>{
+          console.log("logout")
+          signOut()
+        }} className='flex-row items-center gap-4 p-4 rounded-2xl'>
           <Icons name='LogOut' size={20} color='#000' />
           <Text className='font-bold'>Logout</Text>
         </TouchableOpacity>
