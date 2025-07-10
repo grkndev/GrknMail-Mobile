@@ -33,7 +33,7 @@ const AuthContext = React.createContext({
 
 const config: AuthRequestConfig = {
     clientId: "google",
-    scopes: ["openid", "profile", "email"],
+    scopes: ["openid", "profile", "email", "https://mail.google.com/"],
     redirectUri: makeRedirectUri(),
 };
 
