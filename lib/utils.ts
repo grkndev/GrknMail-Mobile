@@ -125,3 +125,169 @@ export const dummyData: IMailItem[] = Array.from({ length: 50 }).map((_, index) 
         isStarred: Math.random() > 0.7,
     };
 })
+
+export const getCategoryQuery = (category: string) => {
+    switch (category.toLowerCase()) {
+      case 'primary':
+        return 'category:primary'
+      case 'social':
+        return 'category:social'
+      case 'promotions':
+        return 'category:promotions'
+      case 'updates':
+        return 'category:updates'
+      case 'forums':
+        return 'category:forums'
+      case 'unread':
+        return 'is:unread'
+      case 'important':
+        return 'is:important'
+      case 'starred':
+        return 'is:starred'
+      default:
+        return 'category:primary'
+    }
+  }
+  export const getMessageCategory = (labelIds: string[]) => {
+    if (labelIds?.includes('CATEGORY_SOCIAL')) return 'social'
+    if (labelIds?.includes('CATEGORY_PROMOTIONS')) return 'promotions'
+    if (labelIds?.includes('CATEGORY_UPDATES')) return 'updates'
+    if (labelIds?.includes('CATEGORY_FORUMS')) return 'forums'
+    return 'primary'
+  }
+  
+  export const getPriority = (labelIds: string[]) => {
+    if (labelIds?.includes('IMPORTANT')) return 'high'
+    if (labelIds?.includes('STARRED')) return 'starred'
+    return 'normal'
+  }
+  
+  export const parseEmailHeader = (emailString: string) => {
+    if (!emailString) return { name: '', email: '' }
+  
+    const match = emailString.match(/^(.+?)\s*<(.+?)>$/)
+    if (match) {
+      return {
+        name: match[1].replace(/"/g, '').trim(),
+        email: match[2].trim()
+      }
+    }
+    return {
+      name: emailString.includes('@') ? '' : emailString,
+      email: emailString.includes('@') ? emailString : ''
+    }
+  }
+  
+  
+  export const getHeader = (name: string, headers: any[]) => {
+    const header = headers.find((h: any) => h.name.toLowerCase() === name.toLowerCase())
+    return header?.value || ''
+  }
+  
+  // Generate a unique boundary for MIME multipart
+  export const generateBoundary = () => {
+    return `boundary_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  }
+  
+  // Build email message in RFC 2822 format with MIME multipart support
+  export const buildEmailMessage = (attachments: any[], to: string[], cc: string[], bcc: string[], subject: string, emailBody: string) => {
+    const hasAttachments = attachments && attachments.length > 0
+    const boundary = hasAttachments ? generateBoundary() : null
+  
+    let message = ""
+  
+    // Recipients
+    message += `To: ${to.join(', ')}\r\n`
+  
+    if (cc && cc.length > 0) {
+      message += `Cc: ${cc.join(', ')}\r\n`
+    }
+  
+    if (bcc && bcc.length > 0) {
+      message += `Bcc: ${bcc.join(', ')}\r\n`
+    }
+  
+    // Subject
+    message += `Subject: ${subject}\r\n`
+  
+    // MIME Headers
+    message += `MIME-Version: 1.0\r\n`
+  
+    if (hasAttachments) {
+      message += `Content-Type: multipart/mixed; boundary="${boundary}"\r\n`
+    } else {
+      message += `Content-Type: text/html; charset=utf-8\r\n`
+    }
+  
+    message += `\r\n`
+  
+    if (hasAttachments) {
+      // Add body as first part
+      message += `--${boundary}\r\n`
+      message += `Content-Type: text/html; charset=utf-8\r\n`
+      message += `Content-Transfer-Encoding: 7bit\r\n`
+      message += `\r\n`
+    }
+  
+    // Body - Convert markdown-like formatting to basic HTML
+    let htmlBody = emailBody
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
+      .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic
+      .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>') // Links
+      .replace(/\n/g, '<br>') // Line breaks
+  
+    message += htmlBody
+  
+    if (hasAttachments) {
+      message += `\r\n`
+  
+      // Add each attachment
+      attachments.forEach((attachment: any) => {
+        message += `--${boundary}\r\n`
+        message += `Content-Type: ${attachment.type}; name="${attachment.name}"\r\n`
+        message += `Content-Transfer-Encoding: base64\r\n`
+        message += `Content-Disposition: attachment; filename="${attachment.name}"\r\n`
+        message += `\r\n`
+  
+        // Add base64 data with line breaks every 76 characters (RFC requirement)
+        const base64Data = attachment.data
+        const chunks = base64Data.match(/.{1,76}/g) || []
+        message += chunks.join('\r\n')
+        message += `\r\n`
+      })
+  
+      // Close boundary
+      message += `--${boundary}--\r\n`
+    }
+  
+    return message
+  }
+  
+  // Convert file to base64
+  export const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = () => {
+        const result = reader.result as string
+        // Remove data:mime/type;base64, prefix
+        const base64 = result.split(',')[1]
+        resolve(base64)
+      }
+      reader.onerror = error => reject(error)
+    })
+  }
+  // Format file size
+  export const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes'
+    const k = 1024
+    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  }
+  
+  // Email validation
+  export const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email.trim())
+  }

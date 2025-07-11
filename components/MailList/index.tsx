@@ -7,6 +7,7 @@ import MailListItem from "./MailListItem";
 export default function MailList({ data }: { data: IMailItem[] }) {
     const [refreshing, setRefreshing] = React.useState(false);
 
+    
     // Optimize render function
     const renderItem = useCallback(({ item, index }: { item: IMailItem, index: number }) => (
         <MailListItem item={item} index={index} />

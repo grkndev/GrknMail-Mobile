@@ -61,7 +61,10 @@ export async function POST(request: Request) {
     const jti = crypto.randomUUID();
 
     // Create access token (short-lived)
-    const accessToken = await new jose.SignJWT(userInfoWithoutExp)
+    const accessToken = await new jose.SignJWT({
+        ...userInfoWithoutExp,
+        google_access_token: data.access_token,
+    })
         .setProtectedHeader({ alg: "HS256" })
         .setExpirationTime(JWT_EXPIRATION_TIME)
         .setSubject(sub)

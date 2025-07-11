@@ -2,6 +2,7 @@ import { AuthProvider, useAuth } from "@/context/auth";
 import "@/global.css";
 import '@/lib/utils';
 
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -51,9 +52,12 @@ function RootLayoutContent() {
 }
 
 export default function RootLayout() {
+  const queryClient = new QueryClient()
   return (
     <AuthProvider>
-      <RootLayoutContent />
+      <QueryClientProvider client={queryClient}>
+        <RootLayoutContent />
+      </QueryClientProvider>
     </AuthProvider>
   );
 }
