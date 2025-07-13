@@ -1,14 +1,14 @@
 import {
-    COOKIE_MAX_AGE,
-    COOKIE_NAME,
-    COOKIE_OPTIONS,
-    GOOGLE_CLIENT_ID,
-    GOOGLE_CLIENT_SECRET,
-    JWT_EXPIRATION_TIME,
-    JWT_SECRET,
-    REFRESH_COOKIE_NAME,
-    REFRESH_COOKIE_OPTIONS,
-    REFRESH_TOKEN_EXPIRY
+  COOKIE_MAX_AGE,
+  COOKIE_NAME,
+  COOKIE_OPTIONS,
+  GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET,
+  JWT_EXPIRATION_TIME,
+  JWT_SECRET,
+  REFRESH_COOKIE_NAME,
+  REFRESH_COOKIE_OPTIONS,
+  REFRESH_TOKEN_EXPIRY
 } from "@/lib/constants/auth";
 import * as jose from "jose";
 
@@ -100,7 +100,7 @@ export async function POST(request: Request) {
 
           // If token is still valid, use it to create a new token
           // This is a fallback mechanism and not ideal for security
-          console.log("No refresh token found, using access token as fallback");
+          // console.log("No refresh token found, using access token as fallback");
 
           // Get the user info from the token
           const userInfo = decoded.payload;

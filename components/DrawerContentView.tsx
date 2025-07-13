@@ -85,7 +85,7 @@ export default function DrawerContentView(props: DrawerContentComponentProps) {
           <Text className='font-bold'>Help & Feedback</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={()=>{
-          console.log("logout")
+          // console.log("logout")
           signOut()
         }} className='flex-row items-center gap-4 p-4 rounded-2xl'>
           <Icons name='LogOut' size={20} color='#000' />

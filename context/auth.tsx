@@ -91,7 +91,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                         const userData = await sessionResponse.json();
                         setUser(userData as AuthUser);
                     } else {
-                        console.log("No active web session found");
+                        // console.log("No active web session found");
 
                         // Try to refresh the token using the refresh cookie
                         try {
@@ -105,14 +105,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     const storedAccessToken = await tokenCache?.getToken("accessToken");
                     const storedRefreshToken = await tokenCache?.getToken("refreshToken");
 
-                    console.log(
-                        "Restoring session - Access token:",
-                        storedAccessToken ? "exists" : "missing"
-                    );
-                    console.log(
-                        "Restoring session - Refresh token:",
-                        storedRefreshToken ? "exists" : "missing"
-                    );
+                    // console.log(
+                    //     "Restoring session - Access token:",
+                    //     storedAccessToken ? "exists" : "missing"
+                    // );
+                    // console.log(
+                    //     "Restoring session - Refresh token:",
+                    //     storedRefreshToken ? "exists" : "missing"
+                    // );
 
                     if (storedAccessToken) {
                         try {
@@ -123,7 +123,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
                             if (exp && exp > now) {
                                 // Access token is still valid
-                                console.log("Access token is still valid, using it");
+                                // console.log("Access token is still valid, using it");
                                 setAccessToken(storedAccessToken);
 
                                 if (storedRefreshToken) {
@@ -133,7 +133,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                                 setUser(decoded as AuthUser);
                             } else if (storedRefreshToken) {
                                 // Access token expired, but we have a refresh token
-                                console.log("Access token expired, using refresh token");
+                                // console.log("Access token expired, using refresh token");
                                 setRefreshToken(storedRefreshToken);
                                 await refreshAccessToken(storedRefreshToken);
                             }
@@ -142,18 +142,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
                             // Try to refresh using the refresh token
                             if (storedRefreshToken) {
-                                console.log("Error with access token, trying refresh token");
+                                // console.log("Error with access token, trying refresh token");
                                 setRefreshToken(storedRefreshToken);
                                 await refreshAccessToken(storedRefreshToken);
                             }
                         }
                     } else if (storedRefreshToken) {
                         // No access token, but we have a refresh token
-                        console.log("No access token, using refresh token");
+                        // console.log("No access token, using refresh token");
                         setRefreshToken(storedRefreshToken);
                         await refreshAccessToken(storedRefreshToken);
                     } else {
-                        console.log("User is not authenticated");
+                        // console.log("User is not authenticated");
                     }
                 }
             } catch (error) {
@@ -170,22 +170,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const refreshAccessToken = async (tokenToUse?: string) => {
         // Prevent multiple simultaneous refresh attempts
         if (refreshInProgressRef.current) {
-            console.log("Token refresh already in progress, skipping");
+            // console.log("Token refresh already in progress, skipping");
             return null;
         }
 
         refreshInProgressRef.current = true;
 
         try {
-            console.log("Refreshing access token...");
+            // console.log("Refreshing access token...");
 
             // Use the provided token or fall back to the state
             const currentRefreshToken = tokenToUse || refreshToken;
 
-            console.log(
-                "Current refresh token:",
-                currentRefreshToken ? "exists" : "missing"
-            );
+            // console.log(
+            //     "Current refresh token:",
+            //     currentRefreshToken ? "exists" : "missing"
+            // );
 
             if (isWeb) {
                 // For web: Use JSON for the request
@@ -200,7 +200,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
                 if (!refreshResponse.ok) {
                     const errorData = await refreshResponse.json();
-                    console.error("Token refresh failed:", errorData);
+                    // console.error("Token refresh failed:", errorData);
 
                     // If refresh fails due to expired token, sign out
                     if (refreshResponse.status === 401) {
@@ -224,12 +224,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             } else {
                 // For native: Use the refresh token
                 if (!currentRefreshToken) {
-                    console.error("No refresh token available");
+                    // console.error("No refresh token available");
                     signOut();
                     return null;
                 }
 
-                console.log("Using refresh token to get new tokens");
+                // console.log("Using refresh token to get new tokens");
                 const refreshResponse = await fetch(`${BASE_URL}/api/auth/refresh`, {
                     method: "POST",
                     headers: {
@@ -243,7 +243,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
                 if (!refreshResponse.ok) {
                     const errorData = await refreshResponse.json();
-                    console.error("Token refresh failed:", errorData);
+                    // console.error("Token refresh failed:", errorData);
 
                     // If refresh fails due to expired token, sign out
                     if (refreshResponse.status === 401) {
@@ -257,14 +257,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 const newAccessToken = tokens.accessToken;
                 const newRefreshToken = tokens.refreshToken;
 
-                console.log(
-                    "Received new access token:",
-                    newAccessToken ? "exists" : "missing"
-                );
-                console.log(
-                    "Received new refresh token:",
-                    newRefreshToken ? "exists" : "missing"
-                );
+                // console.log(
+                //     "Received new access token:",
+                //     newAccessToken ? "exists" : "missing"
+                // );
+                // console.log(
+                //     "Received new refresh token:",
+                //     newRefreshToken ? "exists" : "missing"
+                // );
 
                 if (newAccessToken) setAccessToken(newAccessToken);
                 if (newRefreshToken) setRefreshToken(newRefreshToken);
@@ -278,7 +278,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 // Update user data from the new access token
                 if (newAccessToken) {
                     const decoded = jose.decodeJwt(newAccessToken);
-                    console.log("Decoded user data:", decoded);
+                    // console.log("Decoded user data:", decoded);
                     // Check if we have all required user fields
                     const hasRequiredFields =
                         decoded &&
@@ -287,10 +287,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                         (decoded as any).picture;
 
                     if (!hasRequiredFields) {
-                        console.warn(
-                            "Refreshed token is missing some user fields:",
-                            decoded
-                        );
+                        // console.warn(
+                        //     "Refreshed token is missing some user fields:",
+                        //     decoded
+                        // );
                     }
 
                     setUser(decoded as AuthUser);
@@ -299,7 +299,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 return newAccessToken; // Return the new access token
             }
         } catch (error) {
-            console.error("Error refreshing token:", error);
+            // console.error("Error refreshing token:", error);
             // If there's an error refreshing, we should sign out
             signOut();
             return null;
@@ -315,14 +315,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
             tokens;
 
-        console.log(
-            "Received initial access token:",
-            newAccessToken ? "exists" : "missing"
-        );
-        console.log(
-            "Received initial refresh token:",
-            newRefreshToken ? "exists" : "missing"
-        );
+        // console.log(
+        //     "Received initial access token:",
+        //     newAccessToken ? "exists" : "missing"
+        // );
+        // console.log(
+        //     "Received initial refresh token:",
+        //     newRefreshToken ? "exists" : "missing"
+        // );
 
         // Store tokens in state
         if (newAccessToken) setAccessToken(newAccessToken);
@@ -356,7 +356,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     },
                     appleDiscovery
                 );
-                console.log("response", response);
+                // console.log("response", response);
                 if (isWeb) {
                     // For web: The server sets the tokens in HTTP-only cookies
                     // We just need to get the user data from the response
@@ -378,12 +378,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     });
                 }
             } catch (e) {
-                console.log("Error exchanging code:", e);
+                // console.log("Error exchanging code:", e);
             }
         } else if (appleResponse?.type === "cancel") {
-            console.log("appleResponse cancelled");
+            // console.log("appleResponse cancelled");
         } else if (appleResponse?.type === "error") {
-            console.log("appleResponse error");
+            // console.log("appleResponse error");
         }
     };
 
@@ -408,14 +408,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     formData.append("platform", "web");
                 }
 
-                console.log("request", request);
+                // console.log("request", request);
 
                 // Get the code verifier from the request object
                 // This is the same verifier that was used to generate the code challenge
                 if (request?.codeVerifier) {
                     formData.append("code_verifier", request.codeVerifier);
                 } else {
-                    console.warn("No code verifier found in request object");
+                    // console.warn("No code verifier found in request object");
                 }
 
                 // Send the authorization code to our token endpoint
@@ -455,7 +455,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     await handleNativeTokens(tokens);
                 }
             } catch (e) {
-                console.error("Error handling auth response:", e);
+                // console.error("Error handling auth response:", e);
             } finally {
                 setIsLoading(false);
             }
@@ -476,7 +476,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
             // If the response indicates an authentication error, try to refresh the token
             if (response.status === 401) {
-                console.log("API request failed with 401, attempting to refresh token");
+                // console.log("API request failed with 401, attempting to refresh token");
 
                 // Try to refresh the token
                 await refreshAccessToken();
@@ -493,8 +493,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             return response;
         } else {
             // For native: Use token in Authorization header
-            
-            console.log("accessToken", jose.decodeJwt(accessToken))
+
+            // console.log("accessToken", jose.decodeJwt(accessToken))
             const response = await fetch(url, {
                 ...options,
                 headers: {
@@ -505,7 +505,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
             // If the response indicates an authentication error, try to refresh the token
             if (response.status === 401) {
-                console.log("API request failed with 401, attempting to refresh token");
+                // console.log("API request failed with 401, attempting to refresh token");
 
                 // Try to refresh the token and get the new token directly
                 const newToken = await refreshAccessToken();
@@ -527,10 +527,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     const signIn = async () => {
-        console.log("signIn");
+        // console.log("signIn");
         try {
             if (!request) {
-                console.log("No request");
+                // console.log("No request");
                 return;
             }
 
@@ -543,7 +543,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const signInWithAppleWebBrowser = async () => {
         try {
             if (!appleRequest) {
-                console.log("No appleRequest");
+                // console.log("No appleRequest");
                 return;
             }
             await promptAppleAsync();

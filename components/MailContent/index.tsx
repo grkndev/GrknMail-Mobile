@@ -374,7 +374,7 @@ const MailContent: React.FC<MailContentProps> = ({
                         // Handle external links
                         if (request.url.startsWith('http://') || request.url.startsWith('https://')) {
                             // Here you can handle external links (e.g., open in browser)
-                            console.log('External link clicked:', request.url);
+                            // console.log('External link clicked:', request.url);
                             return false;
                         }
                         
