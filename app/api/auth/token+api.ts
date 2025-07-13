@@ -60,10 +60,16 @@ export async function POST(request: Request) {
     // Generate a unique jti (JWT ID) for the refresh token
     const jti = crypto.randomUUID();
 
+    // Calculate Google token expiration timestamp
+    const googleExpiresAt = issuedAt + (data.expires_in || 3600); // Default to 1 hour if not provided
+
     // Create access token (short-lived)
     const accessToken = await new jose.SignJWT({
         ...userInfoWithoutExp,
-        // google_access_token: data.access_token,
+        google_access_token: data.access_token,
+        google_refresh_token: data.refresh_token,
+        google_expires_in: data.expires_in || 3600,
+        google_expires_at: googleExpiresAt,
     })
         .setProtectedHeader({ alg: "HS256" })
         .setExpirationTime(JWT_EXPIRATION_TIME)
@@ -84,6 +90,11 @@ export async function POST(request: Request) {
         given_name: (userInfo as any).given_name,
         family_name: (userInfo as any).family_name,
         email_verified: (userInfo as any).email_verified,
+        // Include Google tokens in refresh token for renewal
+        google_access_token: data.access_token,
+        google_refresh_token: data.refresh_token,
+        google_expires_in: data.expires_in || 3600,
+        google_expires_at: googleExpiresAt,
     })
         .setProtectedHeader({ alg: "HS256" })
         .setExpirationTime(REFRESH_TOKEN_EXPIRY)

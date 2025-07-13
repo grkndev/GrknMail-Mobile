@@ -2,11 +2,13 @@ import {
     COOKIE_MAX_AGE,
     COOKIE_NAME,
     COOKIE_OPTIONS,
+    GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET,
     JWT_EXPIRATION_TIME,
     JWT_SECRET,
     REFRESH_COOKIE_NAME,
     REFRESH_COOKIE_OPTIONS,
-    REFRESH_TOKEN_EXPIRY,
+    REFRESH_TOKEN_EXPIRY
 } from "@/lib/constants/auth";
 import * as jose from "jose";
 
@@ -205,6 +207,42 @@ export async function POST(request: Request) {
     // Get the user info from the token
     const userInfo = decoded.payload;
 
+    // Check if Google tokens need refresh
+    let refreshedGoogleTokens = null;
+    const googleExpiresAt = (userInfo as any).google_expires_at;
+    const googleRefreshToken = (userInfo as any).google_refresh_token;
+    const currentTimestamp = Math.floor(Date.now() / 1000);
+
+    if (googleExpiresAt && googleRefreshToken && googleExpiresAt <= currentTimestamp + 300) {
+      // Refresh Google tokens if they expire within 5 minutes
+      try {
+        const googleRefreshResponse = await fetch("https://oauth2.googleapis.com/token", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({
+            client_id: GOOGLE_CLIENT_ID,
+            client_secret: GOOGLE_CLIENT_SECRET,
+            refresh_token: googleRefreshToken,
+            grant_type: "refresh_token",
+          }),
+        });
+
+        if (googleRefreshResponse.ok) {
+          const refreshedData = await googleRefreshResponse.json();
+          const newGoogleExpiresAt = issuedAt + (refreshedData.expires_in || 3600);
+          
+          refreshedGoogleTokens = {
+            google_access_token: refreshedData.access_token,
+            google_refresh_token: refreshedData.refresh_token || googleRefreshToken, // Use new refresh token if provided
+            google_expires_in: refreshedData.expires_in || 3600,
+            google_expires_at: newGoogleExpiresAt,
+          };
+        }
+      } catch (error) {
+        console.error("Failed to refresh Google tokens:", error);
+      }
+    }
+
     // Check if we have all the required user information
     // If not, we need to add it to ensure ProfileCard works correctly
     const hasRequiredUserInfo =
@@ -233,11 +271,13 @@ export async function POST(request: Request) {
       };
     }
 
-    // Create a new access token with complete user info
+    // Create a new access token with complete user info and refreshed Google tokens
     const newAccessToken = await new jose.SignJWT({
       ...completeUserInfo,
       // Remove the refresh token specific fields from the access token
       type: undefined,
+      // Use refreshed Google tokens if available
+      ...(refreshedGoogleTokens || {}),
     })
       .setProtectedHeader({ alg: "HS256" })
       .setExpirationTime(JWT_EXPIRATION_TIME)
@@ -245,11 +285,13 @@ export async function POST(request: Request) {
       .setIssuedAt(issuedAt)
       .sign(new TextEncoder().encode(JWT_SECRET));
 
-    // Create a new refresh token (token rotation)
+    // Create a new refresh token (token rotation) with refreshed Google tokens
     const newRefreshToken = await new jose.SignJWT({
       ...completeUserInfo,
       jti,
       type: "refresh",
+      // Use refreshed Google tokens if available
+      ...(refreshedGoogleTokens || {}),
     })
       .setProtectedHeader({ alg: "HS256" })
       .setExpirationTime(REFRESH_TOKEN_EXPIRY)

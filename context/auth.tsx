@@ -493,6 +493,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             return response;
         } else {
             // For native: Use token in Authorization header
+            
+            console.log("accessToken", jose.decodeJwt(accessToken))
             const response = await fetch(url, {
                 ...options,
                 headers: {
