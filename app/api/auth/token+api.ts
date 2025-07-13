@@ -63,7 +63,7 @@ export async function POST(request: Request) {
     // Create access token (short-lived)
     const accessToken = await new jose.SignJWT({
         ...userInfoWithoutExp,
-        google_access_token: data.access_token,
+        // google_access_token: data.access_token,
     })
         .setProtectedHeader({ alg: "HS256" })
         .setExpirationTime(JWT_EXPIRATION_TIME)
