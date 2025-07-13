@@ -291,3 +291,18 @@ export const getCategoryQuery = (category: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     return emailRegex.test(email.trim())
   }
+
+// Mapper function to convert Gmail API response to IMailItem format
+export const mapGmailToMailItem = (gmailMessage: any): IMailItem => {
+  return {
+    id: gmailMessage.id,
+    title: gmailMessage.subject || '(Konu yok)',
+    body: gmailMessage.snippet || '',
+    sender: gmailMessage.from_name || gmailMessage.from_email || 'Bilinmeyen',
+    receivedAt: gmailMessage.formattedDate || 'Bilinmeyen tarih',
+    hasAttachment: gmailMessage.hasAttachments || false,
+    isStarred: gmailMessage.isStarred || false,
+    avatarUrl: undefined, // Gmail API doesn't provide avatar URLs
+    contentType: ContentType.TEXT, // Default to text, can be enhanced later
+  }
+}
