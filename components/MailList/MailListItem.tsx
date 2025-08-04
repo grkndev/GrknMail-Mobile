@@ -1,4 +1,4 @@
-import { IMailItem, truncate } from '@/lib/utils'
+import { getGravatarUrl, IMailItem, truncate } from '@/lib/utils'
 import { RelativePathString, router } from 'expo-router'
 import React, { memo } from 'react'
 import { Image, Pressable, Text, View } from 'react-native'
@@ -10,7 +10,7 @@ const DEFAULT_AVATAR = { uri: 'https://github.com/grkndev.png' }
 // Memoized sub-components for better performance
 const MailHeader = memo(({ sender, receivedAt }: { sender: string, receivedAt: string }) => (
     <View className='flex flex-row justify-between items-center'>
-        <Text className='text-lg font-bold'>{sender}</Text>
+        <Text className='text-lg font-bold'>{truncate(sender, 25)}</Text>
         <Text className='text-sm text-zinc-500'>{receivedAt}</Text>
     </View>
 ))
@@ -37,14 +37,21 @@ const MailActions = memo(({ hasAttachment, isStarred }: { hasAttachment?: boolea
     </View>
 ))
 
-const Avatar = memo(({ avatarUrl }: { avatarUrl?: string }) => (
-    <View className='relative w-12 h-12 items-start'>
-        <View className='absolute top-0 right-0 bg-blue-500 rounded-full w-4 h-4 z-10 border-2 border-white' />
-        <Image
-            source={avatarUrl ? { uri: avatarUrl } : DEFAULT_AVATAR}
-            className='w-12 h-12 rounded-full'
-        />
-    </View>
+const Avatar = memo(({ avatarUrl, isUnread }: { avatarUrl?: string, isUnread?: boolean }) => (
+
+
+
+<View className='relative w-12 h-12 items-start'>
+    {
+        isUnread && (
+            <View className='absolute top-0 right-0 bg-blue-500 rounded-full w-4 h-4 z-10 border-2 border-white' />
+        )
+    }
+    <Image
+        source={avatarUrl ? { uri: getGravatarUrl(avatarUrl) } : DEFAULT_AVATAR}
+        className='w-12 h-12 rounded-full'
+    />
+</View>
 ))
 
 // Ana component - React.memo ile optimize edilmiş
@@ -60,12 +67,12 @@ const MailListItem = memo(({
         <Pressable className='flex-row items-start p-4 border-b border-gray-100 ' onPress={() => {
             router.push(`/(screens)/(MailContentScreen)/mail/${item.id}` as RelativePathString)
         }}>
-            <Avatar avatarUrl={item.avatarUrl} />
+            <Avatar avatarUrl={item.from_email} isUnread={item.isUnread} />
             <View className='flex-1 flex flex-col ml-3'>
-                <MailHeader sender={item.sender} receivedAt={item.receivedAt} />
+                <MailHeader sender={item.from_name} receivedAt={item.formattedDate} />
                 <View className='flex flex-row justify-between items-center flex-1 gap-2 mt-1'>
-                    <MailContent title={item.title} body={item.body} />
-                    <MailActions hasAttachment={item.hasAttachment} isStarred={item.isStarred} />
+                    <MailContent title={item.subject} body={item.snippet} />
+                    <MailActions hasAttachment={item.hasAttachments} isStarred={item.isStarred} />
                 </View>
             </View>
         </Pressable>

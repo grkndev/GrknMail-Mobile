@@ -30,8 +30,8 @@ function RootLayoutContent() {
   }
 
   const isLoggedIn = user ? true : false;
-  console.log(user);
-  console.log(isLoggedIn);
+  // console.log(user);
+  // console.log(isLoggedIn);
   
   return (
     <>

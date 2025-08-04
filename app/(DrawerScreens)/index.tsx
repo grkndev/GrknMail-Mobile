@@ -31,7 +31,7 @@ export default function Home() {
       },
     }).then(res => res.json())
   })
-  console.log("Google Mail data", data)
+  // console.log("Google Mail data", data)
 
   // React.useEffect(() => {
   //   getToken().then(token => {

@@ -11,7 +11,7 @@ async function refreshGoogleTokenIfNeeded(user: any, authHeader: string) {
     
     // Check if Google token expires within 5 minutes
     if (googleExpiresAt && googleExpiresAt <= currentTimestamp + 300) {
-        console.log("Google token expired or expiring soon, refreshing...");
+        // console.log("Google token expired or expiring soon, refreshing...");
         
         // Call our refresh endpoint to get new tokens
         const refreshResponse = await fetch(`${BASE_URL}/api/auth/refresh`, {
@@ -109,7 +109,7 @@ export const GET = withAuth(async (req, user) => {
         return processMessagesResponse(data, googleAccessToken);
 
     } catch (error) {
-        console.log("Error fetching messages", error)
+        // console.log("Error fetching messages", error)
         return Response.json({ error: "Failed to fetch messages" }, { status: 500 })
     }
 });
